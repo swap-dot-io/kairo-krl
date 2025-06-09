@@ -86,7 +86,7 @@ def public_key_b58(sk: SigningKey | None = None, *, mandatory: bool = False) -> 
 
 def calc_key(username: str, sk: SigningKey) -> str:
     sig = sk.sign(username.encode()).signature  # 64 bytes
-    sig_b58 = base58.b58encode(sig).decode()[:B58_SIG_LEN]
+    sig_b58 = base58.b58encode(sig).decode()
     return f"{username}-{sig_b58}"
 
 
