@@ -77,6 +77,13 @@ Run `docker compose run --rm cli --help` at any time to see the full command lis
 | `KAIRO_SIGNING_KEY` | `generate`, `revoke`, `verify-key`, `check-revoked` (when only username is given) | Base58‑encoded Ed25519 private key used to sign the KRL & derive keys. |
 | `PUBLIC_KEY_BASE58` | `verify-krl` (if private key not loaded) | Base58‑encoded public key for readonly signature checks. |
 
+
+### 🔑 Current Public Key
+
+The currently valid public key for verification is:
+```
+CQMNCiexRyPz75ro4f82aWS7voSU7328nQgnLwvdHTkm
+```
 ---
 
 ## 📜 Local key log
