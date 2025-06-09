@@ -42,7 +42,7 @@ KRL_PATH = KRL_DIR / "keys.krl"
 SIG_PATH = KRL_DIR / "keys.sig"
 LOG_PATH = ROOT / ".keys.log"
 ENV_DEFAULT = ROOT / ".env"
-B58_SIG_LEN = 44  # truncated base58 sig segment inside developer keys
+B58_SIG_LEN = 88  # truncated base58 sig segment inside developer keys
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Helper functions
