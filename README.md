@@ -142,4 +142,4 @@ poe test
 
 ## ✍︎ License
 
-Apache‑2.0 © 2025 Swap.io
+MIT License © 2025 Swap.io
