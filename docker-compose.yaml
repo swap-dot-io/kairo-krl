@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  cli:
+    build: .
+    image: kairo-krl-cli:latest
+    # Load maintainer key‑pair from local .env file (git‑ignored)
+    env_file:
+      - .env
+    volumes:
+      # Mount repo so generated files (krl/, .keys.log) persist on host
+      - .:/app
+    # Example command override; otherwise `ENTRYPOINT` from Dockerfile applies
+    # command: ["generate", "alice"]

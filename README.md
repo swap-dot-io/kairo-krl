@@ -1,7 +1,7 @@
 # kairo-krl
 
-**Canonical Key-Revocation List for Swap.io**
-Signed, tamper-evident registry + CLI for issuing or revoking developer API keys.
+**Canonical Key‑Revocation List for Swap.io**  
+Signed, tamper‑evident registry + Dockerised CLI for issuing, revoking and auditing developer API keys.
 
 ---
 
@@ -9,124 +9,140 @@ Signed, tamper-evident registry + CLI for issuing or revoking developer API keys
 
 | Item              | Format / rule                                                                                                                     | Purpose                                                             |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **Developer key** | `username-<sig>` where `<sig>` = Ed25519 signature of `username`, base58-encoded and trimmed to the first **44** chars (URL-safe) | Shared secret presented by clients (e.g. `alice-5feD...ZQh`)        |
-| **KRL entry**     | Hex SHA‑256 of the entire key string (`username-<sig>`)                                                                           | Keeps usernames private while still letting services blacklist keys |
-| **keys.sig**      | Ed25519 detached signature of the raw `keys.krl` bytes                                                                            | Lets services verify the file came from Swap.io                     |
+| **Developer key** | `username-<sig>` where `<sig>` = Ed25519 signature of `username`, base58‑encoded and trimmed to the first **44** chars (URL‑safe)  | Shared secret presented by clients (e.g. `alice-5feD...ZQh`)        |
+| **KRL entry**     | Hex SHA‑256 of the full key string (`username-<sig>`)                                                                              | Keeps usernames private while letting services blacklist keys       |
+| **`keys.sig`**    | Ed25519 detached signature of the raw `keys.krl` bytes                                                                             | Lets services verify the file came from Swap.io                     |
 
-The signing / verification key‑pair is stored **only** in your secure ops vault.
+The signing/verification key‑pair is stored **only** in your secure ops vault.  
 Every service just needs the **public** half to verify `keys.sig`.
 
 ---
 
 ## 📂 Repo layout
 
-```
+```text
 kairo-krl/
 ├── README.md
-├── cli/
-│   ├── __init__.py
-│   └── cli.py
+├── cli/               # Python package (entry‑point: python -m cli …)
+│   ├── __init__.py
+│   └── cli.py
 ├── krl/
-│   ├── keys.krl
-│   └── keys.sig
-├── Dockerfile
-├── docker-compose.yml
-└── .github/workflows/ci.yml
+│   ├── keys.krl        # newline‑delimited SHA‑256 digests
+│   └── keys.sig        # detached signature of keys.krl
+├── Dockerfile          # slim Python 3.11 image
+├── docker-compose.yml  # run everything w/o host Python
+└── .github/workflows/  # lint & test CI
 ```
 
 ---
 
-## 🔧 Quick start
+## 🔧 Quick start (Docker)
 
 ```bash
-# export the maintainer’s private key (once per shell)
-export KAIRO_SIGNING_KEY="<base58 Ed25519 private key>"
-
-# build the image
+# 1. Build the image (first time only)
 docker compose build
 
-# generate a key for alice
+# 2. Generate a maintainer key‑pair (writes .env, git‑ignore this file!)
+docker compose run --rm cli init-keypair --out .env
+
+# 3. Load the env vars in your shell
+export $(grep -v '^#' .env | xargs)
+
+# 4. Create a developer key for Alice & log it
 docker compose run --rm cli generate alice
 
-# revoke the user by adding its key to the KRL
+# 5. Revoke Alice later (adds digest to KRL and re‑signs)
 docker compose run --rm cli revoke alice
 ```
 
-`docker compose run --rm cli --help` shows every sub‑command.
+Run `docker compose run --rm cli --help` at any time to see the full command list.
 
 ---
 
 ## 🖥️ CLI reference
 
-| Command                  | What it does                                                                                       |
-| ------------------------ | -------------------------------------------------------------------------------------------------- |
-| `generate <username>`    | Prints a fresh key (`username-<sig>`), storing a copy with timestamp in `.keys.log` (git‑ignored). |
-| `revoke <username\|key>` | Adds the key’s SHA‑256 hash to `krl/keys.krl` (if absent) and re‑signs the file.                   |
-| `verify`                 | Confirms that `keys.krl` matches `keys.sig` using `PUBLIC_KEY_BASE58`.                             |
+| Command & arguments                           | What it does |
+| --------------------------------------------- | ------------ |
+| `init-keypair [--out .env] [--force]`         | Generate maintainer Ed25519 key‑pair and write an env file. |
+| `generate <username>`                         | Print a fresh developer key, log the action to `.keys.log`. |
+| `revoke <username\|key>`                      | Add the key’s digest to `krl/keys.krl` (if absent) and re‑sign `keys.sig`. |
+| `verify-krl`                                  | Confirm that `keys.krl` matches `keys.sig` using `PUBLIC_KEY_BASE58` (or private key). |
+| `verify-key <username\|key> [--check-revoked]`| Validate the key’s signature; with `--check-revoked` also fail if present in KRL. |
+| `check-revoked <username\|key>`               | Exit non‑zero if the key (or the key derived from USERNAME) is in the KRL. |
 
-Env vars:
+### Environment variables
 
-| Variable            | Required                  | Description                                    |
-| ------------------- | ------------------------- | ---------------------------------------------- |
-| `KAIRO_SIGNING_KEY` | ✔ for `register`/`revoke` | Base58‑encoded private key that signs the KRL. |
-| `PUBLIC_KEY_BASE58` | optional                  | Needed for `verify` in readonly contexts.      |
+| Variable            | Required for…                        | Description |
+| ------------------- | ------------------------------------ | ----------- |
+| `KAIRO_SIGNING_KEY` | `generate`, `revoke`, `verify-key`, `check-revoked` (when only username is given) | Base58‑encoded Ed25519 private key used to sign the KRL & derive keys. |
+| `PUBLIC_KEY_BASE58` | `verify-krl` (if private key not loaded) | Base58‑encoded public key for readonly signature checks. |
 
 ---
 
 ## 📜 Local key log
 
-Each successful `generate` run appends a line in the form
+Every command that mutates state appends an audit line to `.keys.log`:
 
-```
-<ISO8601‑timestamp> <username> <key>
+```text
+<ISO8601>Z <action> <details>
 ```
 
-to `.keys.log` in the project root. This file is listed in `.gitignore` so personal histories never leak into the public repository.
+Examples:
+
+```text
+2025-06-09T11:52:42Z init-keypair
+2025-06-09T11:52:44Z generate alice alice-5feD...
+2025-06-09T11:52:47Z revoke alice
+```
+
+`.keys.log` is **git‑ignored**—it never leaves your workstation.
 
 ---
 
 ## 🌐 Propagation to services
 
-The KRL that live services consume is **only** the version on the `main` branch. Be sure to **commit and push** your changes—until then, revocations will not propagate.
+Live services pull **only** the `main` branch copy of `krl/keys.krl` & `keys.sig`.  
+Be sure to **commit & push** after every revoke; otherwise the change won’t propagate.
 
 ---
 
 ## 🔒 File formats
 
-### `keys.krl`
+### `krl/keys.krl`
 
-```
+```text
 # one digest per line
 3b9004522e8ae1dd5b541ebed5187d77e183cc6b74b4d1b3a99fc7d588d5d7a9
 e6d23f02bb22c3f9b2ab7572c3bc103f72ed32fef93d4fd778de12e3bfd3e2f6
 ```
 
-Always sorted; CLI enforces ordering.
+*Always sorted*—the CLI enforces ordering to guarantee deterministic diffs.
 
-### `keys.sig`
+### `krl/keys.sig`
 
-```
+```text
 # base58 Ed25519 signature (~88 chars)
 4uU4vYxvYJf3muw4SDWiPEkrLnMJCvNncgXQ5hQ6Qnqed97ugwE3k8uo8jgxEAn5qoBD...
 ```
 
 ---
 
-## 🛡️ How services consume the list
+## 🛡️ Consuming the KRL in code
 
 ```python
 import base58, nacl.signing, hashlib, requests
 
-pubkey = nacl.signing.VerifyKey(base58.b58decode(PUBLIC_KEY_BASE58))
-krl     = requests.get("https://raw.githubusercontent.com/swap-io/kairo-krl/main/krl/keys.krl").content
-sig     = base58.b58decode(requests.get("https://raw.githubusercontent.com/swap-io/kairo-krl/main/krl/keys.sig").text.strip())
+PUB = os.environ["PUBLIC_KEY_BASE58"]
+url = "https://raw.githubusercontent.com/swap-dot-io/kairo-krl/main/krl/"
 
-pubkey.verify(krl, sig)   # raises if tampered
-bad_hashes = { line.strip() for line in krl.splitlines() }
+krl  = requests.get(url + "keys.krl").content
+sig  = base58.b58decode(requests.get(url + "keys.sig").text.strip())
+
+nacl.signing.VerifyKey(base58.b58decode(PUB)).verify(krl, sig)  # raises if tampered
+revoked = {line.strip() for line in krl.splitlines()}
 
 def is_key_revoked(dev_key: str) -> bool:
-    digest = hashlib.sha256(dev_key.encode()).hexdigest()
-    return digest in bad_hashes
+    return hashlib.sha256(dev_key.encode()).hexdigest() in revoked
 ```
 
 ---
@@ -134,12 +150,13 @@ def is_key_revoked(dev_key: str) -> bool:
 ## 🏗️ Development
 
 ```bash
-poetry install
-poe test
+# lint, type‑check, unit tests
+pip install -r cli/requirements.txt -r requirements-dev.txt
+pytest -q
 ```
 
 ---
 
 ## ✍︎ License
 
-MIT License © 2025 Swap.io
+MIT © 2025 Swap.io

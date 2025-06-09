@@ -1,0 +1,7 @@
+# runtime
+pynacl>=1.5,<2
+base58>=2.1,<3
+solana>=0.33,<0.34   # for future Solana helpers if needed
+
+# CLI quality of life (optional)
+click>=8.1,<9
