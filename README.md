@@ -66,7 +66,7 @@ Run `docker compose run --rm cli --help` at any time to see the full command lis
 | `init-keypair [--out .env] [--force]`         | Generate maintainer Ed25519 key‑pair and write an env file. |
 | `generate <username>`                         | Print a fresh developer key, log the action to `.keys.log`. |
 | `revoke <username\|key>`                      | Add the key’s digest to `krl/keys.krl` (if absent) and re‑sign `keys.sig`. |
-| `verify-krl`                                  | Confirm that `keys.krl` matches `keys.sig` using `PUBLIC_KEY_BASE58` (or private key). |
+| `verify-krl`                                  | Confirm that `keys.krl` matches `keys.sig` using `KAIRO_PUBLIC_KEY` (or private key). |
 | `verify-key <username\|key> [--check-revoked]`| Validate the key’s signature; with `--check-revoked` also fail if present in KRL. |
 | `check-revoked <username\|key>`               | Exit non‑zero if the key (or the key derived from USERNAME) is in the KRL. |
 
@@ -75,7 +75,7 @@ Run `docker compose run --rm cli --help` at any time to see the full command lis
 | Variable            | Required for…                        | Description |
 | ------------------- | ------------------------------------ | ----------- |
 | `KAIRO_SIGNING_KEY` | `generate`, `revoke`, `verify-key`, `check-revoked` (when only username is given) | Base58‑encoded Ed25519 private key used to sign the KRL & derive keys. |
-| `PUBLIC_KEY_BASE58` | `verify-krl` (if private key not loaded) | Base58‑encoded public key for readonly signature checks. |
+| `KAIRO_PUBLIC_KEY` | `verify-krl` (if private key not loaded) | Base58‑encoded public key for readonly signature checks. |
 
 
 ### 🔑 Current Public Key
@@ -139,7 +139,7 @@ e6d23f02bb22c3f9b2ab7572c3bc103f72ed32fef93d4fd778de12e3bfd3e2f6
 ```python
 import base58, nacl.signing, hashlib, requests
 
-PUB = os.environ["PUBLIC_KEY_BASE58"]
+PUB = os.environ["KAIRO_PUBLIC_KEY"]
 url = "https://raw.githubusercontent.com/swap-dot-io/kairo-krl/main/krl/"
 
 krl  = requests.get(url + "keys.krl").content

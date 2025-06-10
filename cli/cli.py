@@ -75,11 +75,11 @@ def load_signing_key() -> SigningKey:
 def public_key_b58(sk: SigningKey | None = None, *, mandatory: bool = False) -> str:
     if sk is not None:
         return base58.b58encode(sk.verify_key.encode()).decode()
-    pk = os.getenv("PUBLIC_KEY_BASE58")
+    pk = os.getenv("KAIRO_PUBLIC_KEY")
     if pk:
         return pk
     if mandatory:
-        click.echo("❌  PUBLIC_KEY_BASE58 not set.", err=True)
+        click.echo("❌  KAIRO_PUBLIC_KEY not set.", err=True)
         raise click.Abort()
     return ""
 
@@ -144,7 +144,7 @@ def init_keypair(out: Path, force: bool):
     sk = SigningKey.generate()
     priv = base58.b58encode(sk.encode()).decode()
     pub = base58.b58encode(sk.verify_key.encode()).decode()
-    out.write_text(f"KAIRO_SIGNING_KEY={priv}\nPUBLIC_KEY_BASE58={pub}\n")
+    out.write_text(f"KAIRO_SIGNING_KEY={priv}\nKAIRO_PUBLIC_KEY={pub}\n")
     click.echo(f"✅  Key‑pair written to {out}.")
     log_action("init-keypair")
 
