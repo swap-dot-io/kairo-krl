@@ -57,6 +57,7 @@ docker compose run --rm cli revoke alice
 
 Run `docker compose run --rm cli --help` at any time to see the full command list.
 
+For detailed integration steps, see the [Integration Guide](INTEGRATION-GUIDE.md).
 ---
 
 ## 🖥️ CLI reference
