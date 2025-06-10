@@ -16,27 +16,12 @@ Signed, tamper‑evident registry + Dockerised CLI for issuing, revoking and aud
 The signing/verification key‑pair is stored **only** in your secure ops vault.  
 Every service just needs the **public** half to verify `keys.sig`.
 
----
-
-## 📂 Repo layout
-
-```text
-kairo-krl/
-├── README.md
-├── cli/               # Python package (entry‑point: python -m cli …)
-│   ├── __init__.py
-│   └── cli.py
-├── krl/
-│   ├── keys.krl        # newline‑delimited SHA‑256 digests
-│   └── keys.sig        # detached signature of keys.krl
-├── Dockerfile          # slim Python 3.11 image
-├── docker-compose.yml  # run everything w/o host Python
-└── .github/workflows/  # lint & test CI
-```
+For detailed integration steps, see the [Integration Guide](INTEGRATION-GUIDE.md).
 
 ---
 
-## 🔧 Quick start (Docker)
+
+## 🔧 CLI quickstart (docker compose)
 
 ```bash
 # 1. Build the image (first time only)
@@ -45,19 +30,15 @@ docker compose build
 # 2. Generate a maintainer key‑pair (writes .env, git‑ignore this file!)
 docker compose run --rm cli init-keypair --out .env
 
-# 3. Load the env vars in your shell
-export $(grep -v '^#' .env | xargs)
-
-# 4. Create a developer key for Alice & log it
+# 3. Create a developer key for Alice & log it
 docker compose run --rm cli generate alice
 
-# 5. Revoke Alice later (adds digest to KRL and re‑signs)
+# 4. Revoke Alice later (adds digest to KRL and re‑signs)
 docker compose run --rm cli revoke alice
 ```
 
 Run `docker compose run --rm cli --help` at any time to see the full command list.
 
-For detailed integration steps, see the [Integration Guide](INTEGRATION-GUIDE.md).
 ---
 
 ## 🖥️ CLI reference
@@ -161,6 +142,28 @@ def is_key_revoked(dev_key: str) -> bool:
 # lint, type‑check, unit tests
 pip install -r cli/requirements.txt -r requirements-dev.txt
 pytest -q
+```
+
+---
+
+## 📂 Repo layout
+
+```text
+kairo-krl/
+├── README.md
+├── cli/               # Python package (entry‑point: python -m cli …)
+│   ├── __main__.py         # entry point for `python -m cli`
+│   ├── requirements.txt    # CLI dependencies
+│   └── cli.py
+├── krl/
+│   ├── keys.krl        # newline‑delimited SHA‑256 digests
+│   └── keys.sig        # detached signature of keys.krl
+├── .gitignore          # ignore local .env, keys.log, etc.
+├── docker-compose.yml  # run everything w/o host Python
+├── Dockerfile          # slim Python 3.11 image
+├── INTEGRATION-GUIDE.md  # integration guide for services
+├── LICENSE
+└── README.md           # this file
 ```
 
 ---
