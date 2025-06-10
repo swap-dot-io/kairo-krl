@@ -48,6 +48,7 @@ Run `docker compose run --rm cli --help` at any time to see the full command lis
 | `init-keypair [--out .env] [--force]`         | Generate maintainer Ed25519 key‑pair and write an env file. |
 | `generate <username>`                         | Print a fresh developer key, log the action to `.keys.log`. |
 | `revoke <username\|key>`                      | Add the key’s digest to `krl/keys.krl` (if absent) and re‑sign `keys.sig`. |
+| `restore <username\|key>`                      | Remove the key’s digest from `krl/keys.krl` (if present) and re‑sign `keys.sig`. |
 | `verify-krl`                                  | Confirm that `keys.krl` matches `keys.sig` using `KAIRO_PUBLIC_KEY` (or private key). |
 | `verify-key <username\|key> [--check-revoked]`| Validate the key’s signature; with `--check-revoked` also fail if present in KRL. |
 | `check-revoked <username\|key>`               | Exit non‑zero if the key (or the key derived from USERNAME) is in the KRL. |
@@ -62,13 +63,17 @@ Run `docker compose run --rm cli --help` at any time to see the full command lis
 
 ### 🔑 Current Public Key
 
-The currently valid public key for verification is:
+The currently valid kairo master public key for swap.io is:
+
 ```
 CQMNCiexRyPz75ro4f82aWS7voSU7328nQgnLwvdHTkm
 ```
+
+This is the key used to verify the `keys.sig` file and the signatures of developer keys.
+
 ---
 
-## 📜 Local key log
+### 📜 Local key log
 
 Every command that mutates state appends an audit line to `.keys.log`:
 
@@ -88,16 +93,16 @@ Examples:
 
 ---
 
-## 🌐 Propagation to services
+### 🌐 Propagation to services
 
 Live services pull **only** the `main` branch copy of `krl/keys.krl` & `keys.sig`.  
 Be sure to **commit & push** after every revoke; otherwise the change won’t propagate.
 
 ---
 
-## 🔒 File formats
+### 🔒 File formats
 
-### `krl/keys.krl`
+#### `krl/keys.krl`
 
 ```text
 # one digest per line
@@ -107,7 +112,7 @@ e6d23f02bb22c3f9b2ab7572c3bc103f72ed32fef93d4fd778de12e3bfd3e2f6
 
 *Always sorted*—the CLI enforces ordering to guarantee deterministic diffs.
 
-### `krl/keys.sig`
+#### `krl/keys.sig`
 
 ```text
 # base58 Ed25519 signature (~88 chars)
@@ -134,17 +139,10 @@ def is_key_revoked(dev_key: str) -> bool:
     return hashlib.sha256(dev_key.encode()).hexdigest() in revoked
 ```
 
----
-
-## 🏗️ Development
-
-```bash
-# lint, type‑check, unit tests
-pip install -r cli/requirements.txt -r requirements-dev.txt
-pytest -q
-```
+For detailed integration steps, see the [Integration Guide](INTEGRATION-GUIDE.md).
 
 ---
+
 
 ## 📂 Repo layout
 
