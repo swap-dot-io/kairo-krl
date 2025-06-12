@@ -7,11 +7,11 @@ Signed, tamper‑evident registry + Dockerised CLI for issuing, revoking and aud
 
 ## 🗝️ Key concept
 
-| Item              | Format / rule                                                                                                                     | Purpose                                                             |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| **Developer key** | `username-<sig>` where `<sig>` = Ed25519 signature of `username`, base58‑encoded and trimmed to the first **44** chars (URL‑safe)  | Shared secret presented by clients (e.g. `alice-5feD...ZQh`)        |
-| **KRL entry**     | Hex SHA‑256 of the full key string (`username-<sig>`)                                                                              | Keeps usernames private while letting services blacklist keys       |
-| **`keys.sig`**    | Ed25519 detached signature of the raw `keys.krl` bytes                                                                             | Lets services verify the file came from Swap.io                     |
+| Item              | Format / rule                                                                                 | Purpose                                                             |
+| ----------------- |-----------------------------------------------------------------------------------------------| ------------------------------------------------------------------- |
+| **Developer key** | `username-<sig>` where `<sig>` = Ed25519 signature of `username`, base58‑encoded (URL‑safe)   | Shared secret presented by clients (e.g. `alice-5feD...ZQh`)        |
+| **KRL entry**     | Hex SHA‑256 of the full key string (`username-<sig>`)                                         | Keeps usernames private while letting services blacklist keys       |
+| **`keys.sig`**    | Ed25519 detached signature of the raw `keys.krl` bytes                                        | Lets services verify the file came from Swap.io                     |
 
 The signing/verification key‑pair is stored **only** in your secure ops vault.  
 Every service just needs the **public** half to verify `keys.sig`.

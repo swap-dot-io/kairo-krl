@@ -154,6 +154,10 @@ def init_keypair(out: Path, force: bool):
 @click.argument("username")
 def generate(username):
     sk = load_signing_key()
+    # validate a username
+    if not username.isidentifier():
+        click.echo("❌ Invalid username: alphanumerics only, may not start with a digit.", err=True)
+        raise click.Abort()
     key = calc_key(username, sk)
     click.echo(key)
     log_action("generate", f"{username} {key}")
